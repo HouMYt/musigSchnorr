@@ -71,4 +71,4 @@ reference:*On the Risk of Disruption in Several Multiparty Signature Schemes*
   2. 共享Ri
   3. 共享si
 
-####Simple Schnorr MultiSig with Application to Bitcion方案
+#### Simple Schnorr MultiSig with Application to Bitcion方案
