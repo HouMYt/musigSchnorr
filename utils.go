@@ -1,4 +1,4 @@
-package main
+package musigSchnorr
 
 import (
 	"btcd/btcec"
@@ -82,7 +82,8 @@ func intToByte(i *big.Int) []byte {
 func bytetoInt(b []byte)*big.Int  {
 	i := new(big.Int).SetBytes(b)
 	//返回mod Curve.N不确定是否有问题
-	return i.Mod(i, Curve.N)
+	//return i.Mod(i, Curve.N)
+	return i
 
 }
 
@@ -133,7 +134,7 @@ func Unmarshal(curve elliptic.Curve, data []byte) (x, y *big.Int) {
 	x, y = x0, y0
 	return
 }
-
+//用sha256做哈希
 func hTemp(plaintext []byte) []byte {
 	h := sha256.New()
 	h.Write(plaintext)
@@ -145,4 +146,15 @@ func getK(Ry, k0 *big.Int) *big.Int {
 		return k0
 	}
 	return k0.Sub(Curve.N, k0)
+}
+func CurveAdd(ps []CurvePoint)(*CurvePoint,error){
+	if len(ps)<2 {
+		return nil,errors.New("points must be an array with two or more elements")
+	}
+	Px := ps[0].x
+	Py := ps[0].y
+	for i:=1;i<len(ps);i++{
+		Px,Py = Curve.Add(Px,Py,ps[i].x,ps[i].y)
+	}
+	return &CurvePoint{Px,Py},nil
 }

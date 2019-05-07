@@ -1,4 +1,4 @@
-package main
+package musigSchnorr
 
 import (
 	"encoding/hex"
@@ -108,7 +108,7 @@ func Test_Utils(t *testing.T){
 	}
 	copy(m[:], msg)
 	sig,err := schnorr.AggregateSignatures(privKeys,m)
-	pks := []*PublicKey {priv1.PubKey(),priv2.PubKey(),priv3.PubKey()}
+	pks := []*PublicKey{priv1.PubKey(),priv2.PubKey(),priv3.PubKey()}
 	pubkey,err := AddPubkeys(pks)
 	if err != nil && t != nil {
 		t.Fatalf("Unexpected error from addpubkeys: %v\n", err)
@@ -121,7 +121,7 @@ func Test_Utils(t *testing.T){
 }
 func Test_MuSig(t *testing.T)  {
 	//generate parameters
-	priv1,_ :=GenPrivatekey()
+	priv1,_ := GenPrivatekey()
 	priv2,_ := GenPrivatekey()
 	//priv3,_ := GenPrivatekey()
 	var m [32]byte
@@ -159,13 +159,13 @@ func Test_MuSig(t *testing.T)  {
 	//if err!=nil && t!=nil {
 	//	t.Fatalf("Unexpected error from signPart2: %v\n", err)
 	//}
-	si := []*big.Int{bytetoInt(s1),bytetoInt(s2)}
+	si := []*big.Int{bytetoInt(s1), bytetoInt(s2)}
 	s,err := addSigPart(si)
 	if err!=nil && t!=nil {
 		t.Fatalf("Unexpected error from addSigParts: %v\n", err)
 	}
 	var sig [64]byte
-	copy(sig[:32],intToByte(R.x))
+	copy(sig[:32], intToByte(R.x))
 	copy(sig[32:],s)
 	fmt.Printf("Sig: %v\n",s)
 	//verify
@@ -180,10 +180,19 @@ func Test_MuSig(t *testing.T)  {
 		t.Fatalf("Unexpected error from Verify: %v\n", err)
 	}
 	fmt.Printf("The signature is: %v\n",ok)
-
+	//verify false
+	msgfake,err := hex.DecodeString("242F6A8880A308D313198A2E03707344A4093022299F31D0082EFA98EC4E6C89")
+	if err != nil && t != nil {
+		t.Fatalf("Unexpected error from hex.DecodeString(%s): %v\n", m, err)
+	}
+	okfake,err := MuSigVerify(k,msgfake,sig[:])
+	if err!=nil && t!=nil {
+		t.Logf("Expected error from Verify: %v\n", err)
+	}
+	fmt.Printf("The signature is: %v\n",okfake)
 }
 func Test_genAggKey(t *testing.T)  {
-	priv1,_ :=GenPrivatekey()
+	priv1,_ := GenPrivatekey()
 	priv2,_ := GenPrivatekey()
 	pks := []*PublicKey{priv1.PubKey(),priv2.PubKey()}
 	_,err := genAggPubKey(pks)

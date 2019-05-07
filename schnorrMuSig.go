@@ -1,4 +1,4 @@
-package main
+package musigSchnorr
 
 import (
 	"crypto/sha256"
@@ -143,7 +143,7 @@ func genAggPubKey(pks []*PublicKey)([]byte,error){
 		return nil, errors.New("public key wrong")
 	}
 	ai := Hashagg(pks[0],l)
-	bytetoInt(ai).Mod(bytetoInt(ai),Curve.N)
+	bytetoInt(ai).Mod(bytetoInt(ai), Curve.N)
 	Px,Py = Curve.ScalarMult(Px,Py,ai)
 	for i:=1;i<len(pks);i++{
 		Px0, Py0 := Unmarshal(Curve, pks[i].SerializeCompressed())
@@ -157,18 +157,6 @@ func genAggPubKey(pks []*PublicKey)([]byte,error){
 	return Marshal(Curve,Px,Py),nil
 
 }
-func CurveAdd(ps []CurvePoint)(*CurvePoint,error){
-	if len(ps)<2 {
-		return nil,errors.New("points must be an array with two or more elements")
-	}
-	Px := ps[0].x
-	Py := ps[0].y
-	for i:=1;i<len(ps);i++{
-		Px,Py = Curve.Add(Px,Py,ps[i].x,ps[i].y)
-	}
-	return &CurvePoint{Px,Py},nil
-}
-
 func getR(ps []CurvePoint) (*CurvePoint,error) {
 	return CurveAdd(ps)
 }
@@ -181,12 +169,13 @@ func Hashsig(aggKey []byte,rX []byte,m []byte)*big.Int{
 	i := new(big.Int).SetBytes(h[:])
 	return i.Mod(i, Curve.N)
 }
-func signPart(k *PrivateKey ,pks []*PublicKey,Ri []CurvePoint,ri *big.Int,m []byte)([]byte,error){
+func signPart(k *PrivateKey,pks []*PublicKey,Ri []CurvePoint,ri *big.Int,m []byte)([]byte,error){
 	l,err:=getL(pks)
 	if err!=nil {
 		return nil,err
 	}
 	a:= bytetoInt( Hashagg(k.PubKey(),l))
+	a = a.Mod(a, Curve.N)
 	aggKey,err:=genAggPubKey(pks)
 	if err!=nil {
 		return nil,err
@@ -195,11 +184,11 @@ func signPart(k *PrivateKey ,pks []*PublicKey,Ri []CurvePoint,ri *big.Int,m []by
 	if err!=nil {
 		return nil,err
 	}
-	c:=Hashsig(aggKey,intToByte(R.x),m)
+	c:=Hashsig(aggKey, intToByte(R.x),m)
 	c.Mul(c,a)
 	c.Mul(c,k.D)
 	ri.Add(ri,c)
-	ri.Mod(ri,Curve.N)
+	ri.Mod(ri, Curve.N)
 	return intToByte(ri),nil
 }
 func addSigPart(si []*big.Int)([]byte,error){
@@ -210,7 +199,7 @@ func addSigPart(si []*big.Int)([]byte,error){
 	for _,s := range si{
 		sigAdd.Add(sigAdd,s)
 	}
-	return intToByte(sigAdd.Mod(sigAdd,Curve.N)),nil
+	return intToByte(sigAdd.Mod(sigAdd, Curve.N)),nil
 }
 func verifytemp(publicKey [33]byte, message [32]byte, signature [64]byte) (bool, error) {
 	Px, Py := Unmarshal(Curve, publicKey[:])
@@ -226,7 +215,7 @@ func verifytemp(publicKey [33]byte, message [32]byte, signature [64]byte) (bool,
 	if s.Cmp(Curve.N) >= 0 {
 		return false, errors.New("s is larger than or equal to curve order")
 	}
-	e := Hashsig(Marshal(Curve,Px,Py),intToByte(r),message[:])
+	e := Hashsig(Marshal(Curve,Px,Py), intToByte(r),message[:])
 	sGx, sGy := Curve.ScalarBaseMult(intToByte(s))
 	// e.Sub(Curve.N, e)
 	ePx, ePy := Curve.ScalarMult(Px, Py, intToByte(e))
